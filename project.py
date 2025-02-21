@@ -1,74 +1,38 @@
-#instalar a biblioteca gTTS 
-#!pip install gTTS
+#instalar a biblioteca gTTS !pip install gTTS
 
-from gtts import gTTS
-
-text_to_say = "How are you doing?."
-
-language = "en"
-
-gtts_object = gTTS(text = text_to_say, 
-                  lang = language,
-                  slow = False)
-
-gtts_object.save("/content/gtts.wav")
-
-from IPython.display import Audio
-
-Audio("/content/gtts.wav")
-
-french_text = "Je vais au supermarché"
-
-french_language = "fr"
-
-french_gtts_object = gTTS(text = french_text,
-                          lang = french_language,
-                          slow = True)
-
-french_gtts_object.save("/content/french.wav")
-
-Audio("/content/french.wav")
-
-#------------------------------------------------------------------------------//-------------------------------------------------------------------------------------------------------------------------------------------------------
-
-
-#import section
+import tkinter as tk
+from tkinter import messagebox
 import speech_recognition as sr
 from gtts import gTTS
 import os
-from datetime import datetime
-import playsound
 import pyjokes
 import wikipedia
-import pyaudio
 import webbrowser
-import winshell
 from pygame import mixer
+from datetime import datetime
+import playsound
 
-
-#get mic audio
+# Função para capturar áudio do microfone
 def get_audio():
     r = sr.Recognizer()
     with sr.Microphone() as source:
         r.pause_threshold = 1
-        # wait for a second to let the recognizer adjust the
-        # energy threshold based on the surrounding noise level
         r.adjust_for_ambient_noise(source, duration=1)
         audio = r.listen(source)
         said = ""
         try:
             said = r.recognize_google(audio)
-            print(said)
+            print("You said: " + said)
         except sr.UnknownValueError:
             speak("Sorry, I did not get that.")
         except sr.RequestError:
-            speak("Sorry, the service is not available")
+            speak("Sorry, the service is not available.")
     return said.lower()
 
-#speak converted audio to text
+# Função para converter texto em fala
 def speak(text):
     tts = gTTS(text=text, lang='en')
-    filename = "voice.mp3"
+    filename = "/content/voice.mp3"
     try:
         os.remove(filename)
     except OSError:
@@ -76,59 +40,93 @@ def speak(text):
     tts.save(filename)
     playsound.playsound(filename)
 
-#function to respond to commands
+# Função para responder aos comandos
 def respond(text):
-    print("Text from get audio " + text)
+    print("Text from get audio: " + text)
     if 'youtube' in text:
         speak("What do you want to search for?")
         keyword = get_audio()
-        if keyword!= '':
+        if keyword != '':
             url = f"https://www.youtube.com/results?search_query={keyword}"
-            webbrowser.get().open(url)
-            speak(f"Here is what I have found for {keyword} on youtube")
+            webbrowser.open(url)
+            speak(f"Here is what I have found for {keyword} on youtube.")
     elif 'search' in text:
         speak("What do you want to search for?")
         query = get_audio()
-        if query !='':
+        if query != '':
             result = wikipedia.summary(query, sentences=3)
-            speak("According to wikipedia")
+            speak("According to Wikipedia,")
             print(result)
             speak(result)
     elif 'joke' in text:
         speak(pyjokes.get_joke())
-    elif 'empty recycle bin' in text:
-        winshell.recycle_bin().empty(confirm=False, show_progress=False, sound=True)
-        speak("Recycle bin emptied")
     elif 'what time' in text:
         strTime = datetime.today().strftime("%H:%M %p")
         print(strTime)
-        speak(strTime)
+        speak(f"The current time is {strTime}")
     elif 'play music' in text or 'play song' in text:
         speak("Now playing...")
-        music_dir = "C:\\Users\\UserName\\Downloads\\Music\\" #add your music directory here..
+        music_dir = "/content/music/"  # Ajuste para seu diretório de música
         songs = os.listdir(music_dir)
-        #counter = 0
         print(songs)
-        playmusic(music_dir + "\\" + songs[0])
+        playmusic(music_dir + "/" + songs[0])
     elif 'stop music' in text:
         speak("Stopping playback.")
         stopmusic()
     elif 'exit' in text:
-        speak("Goodbye, till next time")
+        speak("Goodbye, till next time.")
         exit()
-#play music
+
+# Função para tocar música
 def playmusic(song):
     mixer.init()
     mixer.music.load(song)
     mixer.music.play()
-#stop music
+
+# Função para parar música
 def stopmusic():
     mixer.music.stop()
 
-#let's try it
-#text = get_audio()
-#speak(text)
-while True:
-    print("I am listening...")
+# Função para ativar o reconhecimento de fala quando o botão é clicado
+def start_listening():
+    speak("Listening...")
     text = get_audio()
-    respond(text)
+    if text != "":
+        respond(text)
+
+# Função para o botão de comando de texto
+def start_text_command():
+    command = entry.get()
+    if command != "":
+        respond(command)
+
+# Criando a janela principal
+root = tk.Tk()
+root.title("Assistente Virtual")
+root.geometry("400x300")
+
+# Mensagem inicial
+label = tk.Label(root, text="Bem-vindo à Assistente Virtual!", font=("Arial", 14))
+label.pack(pady=20)
+
+# Botão para ativar o reconhecimento de voz
+voice_button = tk.Button(root, text="Escutar Comando de Voz", command=start_listening, font=("Arial", 12), width=20)
+voice_button.pack(pady=10)
+
+# Caixa de entrada para comandos de texto
+entry_label = tk.Label(root, text="Ou digite seu comando:", font=("Arial", 12))
+entry_label.pack(pady=5)
+
+entry = tk.Entry(root, font=("Arial", 12), width=30)
+entry.pack(pady=5)
+
+# Botão para ativar comandos de texto
+text_button = tk.Button(root, text="Executar Comando de Texto", command=start_text_command, font=("Arial", 12), width=20)
+text_button.pack(pady=10)
+
+# Botão para fechar a assistente
+exit_button = tk.Button(root, text="Fechar Assistente", command=root.quit, font=("Arial", 12), width=20)
+exit_button.pack(pady=20)
+
+# Rodar a interface
+root.mainloop()
